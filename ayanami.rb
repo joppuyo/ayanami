@@ -26,9 +26,14 @@ bot = Cinch::Bot.new do
 
   helpers do
     def getTitle(url)
-      uri = URI(url)
-      html = Net::HTTP.get(uri)
-      dom = Nokogiri(html)
+      uri = URI.parse(url)
+      http = Net::HTTP.new(uri.host, uri.port)
+      if uri.scheme == "https"
+        http.use_ssl = true
+      end
+      req = Net::HTTP::Get.new(uri.request_uri)
+      html = http.request(req)
+      dom = Nokogiri(html.body)
       title = dom.css('title').first
       if title
         return title.content
