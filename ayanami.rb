@@ -1,11 +1,26 @@
 require 'cinch'
 require 'net/http'
 require 'nokogiri'
+require 'yaml'
 
 bot = Cinch::Bot.new do
   configure do |c|
-    c.server = "irc.quakenet.org"
-    c.channels = ["#ayanami-test"]
+    begin
+      config = YAML.load_file('config.yaml')
+    rescue
+      raise "problem loading config file!"
+    end
+
+    if !config['server']
+      raise "no server in the configuration file!"
+    end
+
+    if !config['channels'].kind_of?(Array)
+      raise "no channels in the configuration file!"
+    end
+
+    c.server = config['server']
+    c.channels = config['channels']
     c.nick = "ayanami"
   end
 
