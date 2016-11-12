@@ -37,13 +37,10 @@ bot = Cinch::Bot.new do
   end
 
   on :message, /(https?:\/\/\S*)/ do |m, url|
-    # m.reply "Hello, #{m.user.nick}"
-    # debug "message contains url"
     title = getTitle(url)
     if title
       m.reply title
     end
-    # debug url
   end
 end
 
