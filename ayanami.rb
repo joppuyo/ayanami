@@ -71,7 +71,7 @@ bot = Cinch::Bot.new do
         dom = Nokogiri(html)
         title = dom.css("title").first
         if title
-          return title.content
+          return title.content.strip
         end
       end
     end
