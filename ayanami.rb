@@ -1,88 +1,78 @@
-require "cinch"
-require "net/http"
-require "nokogiri"
-require "yaml"
+require 'cinch'
+require 'net/http'
+require 'nokogiri'
+require 'yaml'
 
 bot = Cinch::Bot.new do
   configure do |c|
     begin
-      config = YAML.load_file("config.yaml")
+      config = YAML.load_file('config.yaml')
     rescue
-      raise "problem loading config file!"
+      raise 'problem loading config file!'
     end
 
-    if !config["server"]
-      raise "no server in the configuration file!"
+    raise 'no server in the configuration file!' unless config['server']
+
+    unless config['channels'].is_a?(Array)
+      raise 'no channels in the configuration file!'
     end
 
-    if !config["channels"].kind_of?(Array)
-      raise "no channels in the configuration file!"
-    end
-
-    c.server = config["server"]
-    c.channels = config["channels"]
-    c.nick = "ayanami"
+    c.server = config['server']
+    c.channels = config['channels']
+    c.nick = 'ayanami'
   end
 
   helpers do
-    def constructUrl(url)
-      if url.start_with? "www."
-        return "http://" + url
+    def construct_url(url)
+      if url.start_with? 'www.'
+        'http://' + url
       else
-        return url
+        url
       end
     end
 
-    def checkContentIsHtml(uri)
+    def check_content_is_html(uri)
       http = Net::HTTP.new(uri.host, uri.port)
-      if uri.scheme == "https"
-        http.use_ssl = true
-      end
+      http.use_ssl = true if uri.scheme == 'https'
       req = Net::HTTP::Head.new(uri.request_uri)
       response = http.request(req)
 
-      if response.code != "200"
-        puts "Discarding. Non-200 HTTP code"
+      if response.code != '200'
+        puts 'Discarding. Non-200 HTTP code'
         return false
       end
 
-      if response["Content-Type"].include? "text/html"
+      if response['Content-Type'].include? 'text/html'
         return true
       else
-        puts "Discarding Content-Type #{response["Content-Type"]}. Probably binary content"
+        puts "Discarding Content-Type #{response['Content-Type']}. Probably binary content"
       end
-      return false
+      false
     end
 
-    def getHtml(uri)
+    def get_html(uri)
       http = Net::HTTP.new(uri.host, uri.port)
-      if uri.scheme == "https"
-        http.use_ssl = true
-      end
+      http.use_ssl = true if uri.scheme == 'https'
       req = Net::HTTP::Get.new(uri.request_uri)
       response = http.request(req)
-      return response.body
+      response.body
     end
 
-    def getTitle(url)
-      uri = URI.parse(constructUrl(url))
-      if(checkContentIsHtml(uri))
-        html = getHtml(uri)
+    def get_title(url)
+      uri = URI.parse(construct_url(url))
+      if check_content_is_html(uri)
+        html = get_html(uri)
         dom = Nokogiri(html)
-        title = dom.css("title").first
-        if title
-          return title.content.strip
-        end
+        title = dom.css('title').first
+        return title.content.strip if title
       end
     end
   end
 
-  on :message, /((https?:\/\/|www.)\S*)/ do |m, url|
+  on :message, %r{((https?://|www.)\S*)} do |m, url|
     puts "Getting title for #{url}"
-    title = getTitle(url)
-    if title
-      m.reply title
-    end
+    title = get_title(url)
+    m.reply title if title
   end
 end
 
